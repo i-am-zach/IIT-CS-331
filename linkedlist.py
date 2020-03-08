@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 class LinkedList:
     class Node:
         def __init__(self, val, prior=None, next=None):
@@ -165,16 +168,62 @@ class LinkedList:
         """Inserts value at position idx, shifting the original elements down the
         list, as needed. Note that inserting a value at len(self) --- equivalent
         to appending the value --- is permitted. Raises IndexError if idx is invalid."""
+        if idx > len(self):
+            raise IndexError()
+        if idx == len(self):
+            self.append(value)
+            return
+        if idx == 0:
+            self.prepend(value)
+            return
         
+        n = self.head
+        for _ in range(idx):
+            n = n.next
+        new_node = LinkedList.Node(value, prior=n, next=n.next)
+        n.next = n.next.prior = new_node
+        self.length += 1
+    
+    def rm_node(self, node):
+        prev = node.prior
+        if prev == self.head:
+            self.head.next = node.next
+        else:
+            prev.next = node.next
     
     def pop(self, idx=-1):
         """Deletes and returns the element at idx (which is the last element,
         by default)."""
+        val = self[idx]
+        prev = None
+        n = self.head.next
+        for _ in range(idx):
+            prev = n
+            n = n.next
+            
+        if prev == None:
+            self.head.next = n.next
+        else:
+            prev.next = n.next
+            
+        self.length -= 1
+        return val
         
-    
     def remove(self, value):
         """Removes the first (closest to the front) instance of value from the
         list. Raises a ValueError if value is not found in the list."""
+        n = self.head.next
+        prev = None
+        for i in range(len(self)):
+            if self[i] == value:
+                if prev == None:
+                    self.head.next = n.next
+                else:
+                    prev.next = n.next
+                return
+            prev = n
+            n = n.next
+        raise ValueError()
         
     
 
@@ -183,10 +232,19 @@ class LinkedList:
     def __eq__(self, other):
         """Returns True if this LinkedList contains the same elements (in order) as
         other. If other is not an LinkedList, returns False."""
-        
+        if not isinstance(other, LinkedList) or len(self) != len(other):
+            return False
+        for i in range(len(self)):
+            if self[i] != other[i]:
+                return False
+        return True
 
     def __contains__(self, value):
         """Implements `val in self`. Returns true if value is found in this list."""
+        for i in range(len(self)):
+            if self[i] == value:
+                return True
+        return False
         
 
 
@@ -198,22 +256,42 @@ class LinkedList:
     
     def min(self):
         """Returns the minimum value in this list."""
-        
+        m = self[0]
+        for i in range(len(self)):
+            if self[i] < m:
+                m = self[i]
+        return m
     
     def max(self):
         """Returns the maximum value in this list."""
+        m = self[0]
+        for i in range(len(self)):
+            if self[i] > m:
+                m = self[i]
+        return m
         
-    
     def index(self, value, i=0, j=None):
         """Returns the index of the first instance of value encountered in
         this list between index i (inclusive) and j (exclusive). If j is not
         specified, search through the end of the list for value. If value
         is not in the list, raise a ValueError."""
-        
+        if j == None:
+            j = len(self)
+        else:
+            j = self._normalize_idx(j)
+            i = self._normalize_idx(i)
+        for index in range(i, j, 1):
+            if self[index] == value:
+                return index
+        raise ValueError()
     
     def count(self, value):
         """Returns the number of times value appears in this list."""
-        
+        count = 0
+        for i in range(len(self)):
+            if self[i] == value:
+                count += 1
+        return count
 
     
     ### bulk operations ###
@@ -222,21 +300,32 @@ class LinkedList:
         """Implements `self + other_list`. Returns a new LinkedList
         instance that contains the values in this list followed by those 
         of other."""
-        assert(isinstance(other, LinkedList))
+        clone = self.copy()
+        clone.extend(other)
+        return clone
         
     
     def clear(self):
         """Removes all elements from this list."""
+        self.head = self.cursor = LinkedList.Node(None) # sentinel node (never to be removed)
+        self.head.prior = self.head.next = self.head # set up "circular" topology
+        self.length = 0
         
         
     def copy(self):
         """Returns a new LinkedList instance (with separate Nodes), that
         contains the same values as this list."""
+        clone = LinkedList()
+        for elem in self:
+            clone.append(elem)
+        return clone
         
 
     def extend(self, other):
         """Adds all elements, in order, from other --- an Iterable --- to this list."""
-        
+        n = self.head.prior
+        for elem in other:
+            self.append(elem)
 
             
     ### iteration ###
