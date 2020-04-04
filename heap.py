@@ -77,3 +77,39 @@ class Heap:
 
     def __repr__(self):
         return repr(self.data)
+    
+def running_medians(iterable):
+    medians = []
+    min_heap = Heap(lambda x: -x)
+    max_heap = Heap(lambda x: x)
+    for elem, num_elems in enumerate(iterable):
+        num_elems += 1
+        if medians and elem > medians[-1]:
+            min_heap.add(elem)
+        else:
+            max_heap.add(elem)
+        
+        if len(max_heap) - len(min_heap) > 1:
+            min_heap.add(max_heap.pop())
+        elif len(min_heap) - len(max_heap) > 1:
+            max_heap.add(min_heap.pop())
+        
+        # Even number of elements so divide
+        if num_elems % 2 == 0:
+            high, low = min_heap.pop(), max_heap.pop()
+            medians.append((high + low) / 2)
+            min_heap.add(high)
+            max_heap.add(low)
+        # Odd number of elements; median is root of Heap with more values
+        else:
+            if len(max_heap) > len(min_heap):
+                med = max_heap.pop()
+                medians.append(med)
+                max_heap.add(med)
+            else:
+                med = min_heap.pop()
+                medians.append(med)
+                min_heap.add(med)
+            
+            
+    return medians    
